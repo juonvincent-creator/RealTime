@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Realtime — Merged Prototype (v3+v4)</title>
+<style>
+  :root{
+    --blue:#0bb2ff;                 /* corporate blue */
+    --bg:#090a0d;                   /* app background */
+    --card:#0b0d12;                 /* card surface */
+    --text:#e9f2ff;                 /* main text */
+    --muted:#9aa8c0;                /* labels */
+    --border:rgba(255,255,255,.12); /* borders */
+    --radius:18px;
+    --shadow:0 10px 30px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .container{max-width:1160px;margin:0 auto;padding:20px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .badge{display:inline-flex;align-items:center;border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:12px;background:rgba(255,255,255,.04)}
+  .pill{font-size:12px;border:1px solid var(--border);border-radius:999px;padding:4px 10px;background:rgba(255,255,255,.04)}
+  .tabs{display:grid;gap:12px}
+  .tabbar{display:flex;flex-wrap:wrap;gap:8px;background:rgba(255,255,255,.04);padding:8px;border-radius:14px;border:1px solid var(--border)}
+  .tab{padding:8px 12px;border-radius:10px;border:1px solid transparent;font-weight:650;cursor:pointer;background:transparent;color:var(--text)}
+  .tab.active{background:var(--card);border-color:var(--border);box-shadow:var(--shadow)}
+  .tabpane{margin-top:6px}
+  .grid{display:grid;gap:16px}
+  .col-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .col-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .col-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  @media(max-width:960px){.col-3,.col-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:640px){.col-2,.col-3,.col-4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .head{padding:14px 16px;border-bottom:1px solid var(--border)}
+  .title{font-weight:800}
+  .desc{font-size:12px;color:var(--muted)}
+  .body{padding:16px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .muted{color:var(--muted)}
+  .sep{height:1px;background:var(--border);margin:12px 0}
+  .input{width:100%;border:1px solid var(--border);border-radius:12px;background:#0f1117;color:var(--text);padding:10px 12px}
+  .input::placeholder{color:#9aa8c0}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid var(--border);padding:9px 14px;font-weight:700;cursor:pointer;background:#0f1117;color:var(--text)}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.blue{background:var(--blue);border-color:var(--blue);color:#001019}
+  .btn.ghost{background:transparent}
+  .btn.destructive{background:#ef4444;border-color:#ef4444}
+  .btn.sm{padding:6px 10px;font-size:13px;border-radius:10px}
+  .btn.xs{padding:4px 8px;font-size:12px;border-radius:9px}
+  .badge2{display:inline-flex;align-items:center;background:#0f1117;border:1px solid var(--border);border-radius:999px;padding:2px 10px;font-size:12px}
+  .progress{height:10px;background:#1a1d25;border-radius:999px;overflow:hidden;border:1px solid var(--border)}
+  .progress>i{display:block;height:100%;background:var(--blue);width:0;transition:width .25s}
+  .switch{position:relative;width:52px;height:28px;background:#2a2f3a;border-radius:999px;cursor:pointer;border:1px solid var(--border)}
+  .switch i{position:absolute;top:2px;left:2px;width:24px;height:24px;background:#fff;border-radius:50%;transition:.2s}
+  .switch.on{background:var(--blue)}
+  .switch.on i{left:26px}
+  .chart{width:100%;height:220px}
+  .nudge{border:1px solid var(--border);background:#0f1117;border-radius:14px;padding:12px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 6px;border-bottom:1px solid var(--border);font-size:14px}
+  th{font-size:12px;color:var(--muted);text-align:left}
+  /* Modal */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal{width:min(92vw,560px);background:var(--card);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
+  .modal .body{padding:16px}
+  /* Swipe deck */
+  .deck{position:relative;height:420px}
+  .card-swipe{position:absolute;inset:0;margin:auto;width:min(520px,92%);height:100%;border-radius:18px;border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))}
+  .card-swipe .content{padding:18px}
+  .label-like,.label-nope,.label-super{position:absolute;top:14px;padding:6px 10px;border:2px solid;border-radius:8px;font-weight:900;letter-spacing:.08em}
+  .label-like{left:14px;color:#00e471;border-color:#00e471}
+  .label-nope{right:14px;color:#ff5e7d;border-color:#ff5e7d}
+  .label-super{left:50%;transform:translateX(-50%);color:#ffd400;border-color:#ffd400}
+  .actions{position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:12px}
+  .round{width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:2px solid var(--border);background:#0f1117;cursor:pointer}
+  .round.blue{background:var(--blue);border-color:var(--blue);color:#001019}
+  .round:active{transform:scale(.98)}
+  /* Toast */
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0f1117;border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:none;z-index:60}
+</style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0bb2ff">
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <!-- Inline stopwatch logo with brand gradient -->
+      <svg width="46" height="46" viewBox="0 0 64 64" aria-label="Realtime logo">
+        <defs>
+          <linearGradient id="rtG" x1="0" x2="1">
+            <stop offset="0" stop-color="#00c3ff"/><stop offset="1" stop-color="#007bff"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="14" fill="#0b0d12" stroke="rgba(255,255,255,.12)"/>
+        <circle cx="32" cy="34" r="16" fill="none" stroke="url(#rtG)" stroke-width="4"/>
+        <path d="M25 34 l6 6 l10 -12" fill="none" stroke="url(#rtG)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="28" y="12" width="8" height="6" rx="2" fill="url(#rtG)"/>
+        <rect x="24" y="8" width="16" height="4" rx="2" fill="url(#rtG)"/>
+      </svg>
+      <strong style="font-size:18px">Realtime</strong>
+      <span class="badge">Merged v3+v4</span>
+    </div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">
+      <button class="pill" id="btnInstall" style="display:none">Install</button>
+      <button class="pill" id="btnExport">Export</button>
+      <button class="pill" id="btnImport">Import</button>
+      <button class="pill" id="btnReset">Reset</button>
+      <span class="pill" id="usageBadge">Usage: 0</span>
+    </div>
+  </header>
+
+  <!-- Tabbar -->
+  <div class="tabs">
+    <div class="tabbar">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="focus">Focus</button>
+      <button class="tab" data-tab="swipe">Alternatives (Swipe)</button>
+      <button class="tab" data-tab="communities">Communities</button>
+      <button class="tab" data-tab="leaderboard">Leaderboard</button>
+      <button class="tab" data-tab="insights">Insights</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="tabpane">
+      <div class="grid col-3">
+        <div class="card" style="grid-column:span 2;">
+          <div class="head"><div class="title">This Week</div><div class="desc">Daily social media minutes</div></div>
+          <div class="body"><svg id="weeklyChart" class="chart" role="img" aria-label="Weekly usage chart"></svg></div>
+        </div>
+        <div class="card">
+          <div class="head">
+            <div class="title">Daily Limit</div>
+            <div class="desc">Today: <span id="todayMin">—</span> • Remaining: <span id="remainMin">—</span></div>
+          </div>
+          <div class="body">
+            <div class="row" style="gap:8px">
+              <input id="dailyLimit" type="number" class="input" style="width:110px" min="30" value="120" aria-label="Daily limit minutes">
+              <span class="muted">minutes/day</span>
+            </div>
+            <div class="progress" style="margin:10px 0 6px"><i id="dailyProgress" style="width:0%"></i></div>
+            <div class="desc"><span id="dailyPct">0</span>% of today’s limit used</div>
+            <div class="sep"></div>
+            <button id="startFocusFromDL" class="btn blue" title="Start a focus session now">Start Focus Session</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="nudge" class="nudge" style="display:none;margin:16px 0">
+        <div class="row">
+          <div>
+            <div class="title" style="font-size:16px">Looks like Instagram time is stacking up</div>
+            <div class="desc">Try one of these quick alternatives:</div>
+          </div>
+          <button class="btn sm ghost" id="dismissNudge">Dismiss</button>
+        </div>
+        <div id="nudgeList" class="grid col-2" style="margin-top:8px"></div>
+      </div>
+
+      <div class="grid col-3">
+        <div class="card" style="grid-column:span 2;">
+          <div class="head"><div class="title">Productive Alternatives</div><div class="desc">Tap to open • adds to your preference model</div></div>
+          <div class="body">
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <input id="altSearch" class="input" placeholder="Search topics… e.g. chess, python, workout" style="flex:1">
+              <button id="shuffleAlts" class="btn">Shuffle</button>
+              <button id="openSwipeTab" class="btn blue">Open Swipe Deck</button>
+            </div>
+            <div id="altGrid" class="grid col-3" style="margin-top:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head"><div class="title">Community Snapshot</div><div class="desc">Time spent by category</div></div>
+          <div class="body"><svg id="donut" class="chart" role="img" aria-label="Category donut"></svg></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="head"><div class="title">Per-App Limits</div><div class="desc">Prototype controls (real enforcement needs OS APIs)</div></div>
+        <div class="body grid col-3" id="appCards"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="head"><div class="title">Weekly Total</div><div class="desc">Aggregate minutes across the last 7 days</div></div>
+        <div class="body row">
+          <div>
+            <div class="title" id="weeklyTotal" style="font-size:30px">—</div>
+            <div class="desc" id="weeklyTotalHH">—</div>
+          </div>
+          <button class="btn" id="btnNotify">Notify when near limit</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOCUS -->
+    <section id="focus" class="tabpane" style="display:none">
+      <div class="grid col-2">
+        <div class="card">
+          <div class="head"><div class="title">Focus Session</div><div class="desc">Mute distractions and reclaim time</div></div>
+          <div class="body">
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <span class="muted">Length</span>
+              <div id="focusPresets" class="row" style="gap:6px"></div>
+            </div>
+            <div style="font-size:40px;font-weight:800;margin:10px 0"><span id="timerMM">25</span>:<span id="timerSS">00</span></div>
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <button id="focusStart" class="btn blue">Start</button>
+              <button id="focusStop" class="btn destructive" disabled>Stop</button>
+              <button id="focusReset" class="btn">Reset</button>
+              <button id="focusSound" class="btn">Ambient sound: <span id="soundState">Off</span></button>
+            </div>
+            <div class="sep"></div>
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              <button class="btn" id="addFocusToCalendar">Add to calendar (demo)</button>
+              <button class="btn" id="shareProgress">Share progress</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="head"><div class="title">Streak & Rewards</div><div class="desc">Complete sessions to build a streak</div></div>
+          <div class="body" id="streakBadges" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SWIPE -->
+    <section id="swipe" class="tabpane" style="display:none">
+      <div class="card">
+        <div class="head"><div class="title">Swipe Alternatives</div><div class="desc">Right = like, Left = skip, Up = superlike</div></div>
+        <div class="body">
+          <div class="deck" id="deck"></div>
+          <div class="actions">
+            <div class="round" id="btnNope" title="Skip">✖</div>
+            <div class="round blue" id="btnLike" title="Like">❤</div>
+            <div class="round" id="btnSuper" title="Superlike">★</div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div class="desc">Liked: <span id="likedCount">0</span> • Skipped: <span id="skippedCount">0</span></div>
+            <button class="btn sm" id="refillDeck">Refill deck</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMUNITIES -->
+    <section id="communities" class="tabpane" style="display:none">
+      <div class="card">
+        <div class="head"><div class="title">Communities Near You</div><div class="desc">Join local groups and compare progress</div></div>
+        <div class="body">
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+            <span class="muted">Region</span>
+            <div id="regionBtns" class="row" style="gap:6px"></div>
+            <button class="btn sm" id="btnUseLocation">Use my location</button>
+          </div>
+          <div id="communitiesList" class="grid col-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEADERBOARD -->
+    <section id="leaderboard" class="tabpane" style="display:none">
+      <div class="card">
+        <div class="head"><div class="title">Monthly Leaderboard</div><div class="desc">Least screen time wins • <span id="daysLeft">—</span> days left this month</div></div>
+        <div class="body">
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px">
+            <div id="groupButtons" class="row" style="gap:6px"></div>
+            <button id="createGroup" class="btn">Create group</button>
+            <button id="lbExport" class="btn">Export CSV</button>
+            <button id="lbShare" class="btn">Share invite</button>
+            <button id="lbReset" class="btn">Reset month (demo)</button>
+          </div>
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th style="text-align:right">Monthly minutes</th><th style="text-align:right">Status</th></tr></thead>
+            <tbody id="lbBody"></tbody>
+          </table>
+          <div class="card" style="margin-top:12px">
+            <div class="body row">
+              <div>
+                <div class="title" style="font-size:14px">Group prize</div>
+                <div class="desc" id="groupPrize">—</div>
+              </div>
+              <button class="btn" id="editPrize">Edit prize</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INSIGHTS -->
+    <section id="insights" class="tabpane" style="display:none">
+      <div class="grid col-2">
+        <div class="card">
+          <div class="head"><div class="title">Usage Insights</div><div class="desc">Actions, clicks, and time saved (simulated)</div></div>
+          <div class="body" id="usagePanel"></div>
+        </div>
+        <div class="card">
+          <div class="head"><div class="title">Your Preferences</div><div class="desc">Top categories from likes</div></div>
+          <div class="body" id="prefPanel"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="head"><div class="title">Achievements</div><div class="desc">Keep building good habits</div></div>
+        <div class="body" id="achievements"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="settings" class="tabpane" style="display:none">
+      <div class="card">
+        <div class="head"><div class="title">Preferences</div><div class="desc">Personalize limits, privacy, and notifications</div></div>
+        <div class="body">
+          <div class="grid col-2">
+            <label>Display name<input id="set_name" class="input" value="You"></label>
+            <label>Daily limit (minutes)<input id="set_limit" type="number" class="input" value="120"></label>
+          </div>
+          <div class="sep"></div>
+          <div class="row"><div><div class="title" style="font-size:14px">Notifications</div><div class="desc">Alerts when you approach your daily limit</div></div><div id="set_notif" class="switch on"><i></i></div></div>
+          <div class="row"><div><div class="title" style="font-size:14px">Geolocation</div><div class="desc">Enable local community insights</div></div><div id="set_geo" class="switch"><i></i></div></div>
+          <div class="row"><div><div class="title" style="font-size:14px">GDPR Consent</div><div class="desc">Allow anonymized analytics & community aggregation</div></div><div id="set_gdpr" class="switch"><i></i></div></div>
+          <div class="sep"></div>
+          <div class="title" style="font-size:14px;margin-bottom:6px">App limits (simulated)</div>
+          <div class="grid col-3" id="settingsApps"></div>
+          <div class="desc" style="margin-top:6px"><em>Note:</em> Real enforcement requires iOS FamilyControls or Android Usage Access.</div>
+          <div class="sep"></div>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <button class="btn" id="saveSettings">Save changes</button>
+            <button class="btn ghost" id="btnCopyShare">Copy shareable summary</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Onboarding Modal -->
+<div id="onboarding" class="backdrop">
+  <div class="modal">
+    <div class="head"><div class="title">Welcome to Realtime</div><div class="desc">Set your goals and preferences (you can change later)</div></div>
+    <div class="body">
+      <div class="grid col-2">
+        <label>Display name<input id="ob_name" class="input" value="You"></label>
+        <label>Daily limit (minutes)<input id="ob_limit" type="number" class="input" value="120" min="30"></label>
+      </div>
+      <div class="sep"></div>
+      <div class="desc" style="margin-bottom:6px">Select interests for smarter suggestions</div>
+      <div id="ob_interests" class="row" style="gap:8px;flex-wrap:wrap"></div>
+      <div class="sep"></div>
+      <div class="row"><div><div class="title" style="font-size:14px">Geolocation</div><div class="desc">Enable local community insights</div></div><div id="ob_geo" class="switch"><i></i></div></div>
+      <div class="row"><div><div class="title" style="font-size:14px">GDPR Consent</div><div class="desc">Allow anonymized analytics & community aggregation</div></div><div id="ob_gdpr" class="switch"><i></i></div></div>
+    </div>
+    <div class="row" style="padding:12px;border-top:1px solid var(--border);justify-content:flex-end">
+      <button id="ob_finish" class="btn blue">Finish</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div id="importer" class="backdrop">
+  <div class="modal">
+    <div class="head"><div class="title">Import data</div><div class="desc">Paste previously exported JSON</div></div>
+    <div class="body">
+      <textarea id="importText" class="input" rows="10" placeholder='{"realtime":{...}}'></textarea>
+      <div class="sep"></div>
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button class="btn" id="closeImport">Cancel</button>
+        <button class="btn blue" id="doImport">Import</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== PWA (Manifest + SW via Blobs) ===================== */
+(function setupPWA(){
+  // generate simple blue icons via canvas
+  function iconDataURL(size){
+    const c=document.createElement('canvas'); c.width=c.height=size; const x=c.getContext('2d');
+    x.fillStyle='#0bb2ff'; x.fillRect(0,0,size,size);
+    x.strokeStyle='#001019'; x.lineWidth=size*0.06; x.strokeRect(size*0.08,size*0.08,size*0.84,size*0.84);
+    x.lineWidth=size*0.08; x.strokeStyle='#ffffff'; x.beginPath();
+    x.arc(size/2, size/2, size*0.3, 0, Math.PI*2); x.stroke();
+    return c.toDataURL('image/png');
+  }
+  const manifest = {
+    name:"Realtime",
+    short_name:"Realtime",
+    description:"Reduce unproductive screen time with limits, nudges, swipe alternatives, and group leaderboards.",
+    start_url:"./",
+    display:"standalone",
+    background_color:"#090a0d",
+    theme_color:"#0bb2ff",
+    icons:[
+      {src:iconDataURL(192), sizes:"192x192", type:"image/png", purpose:"any maskable"},
+      {src:iconDataURL(512), sizes:"512x512", type:"image/png", purpose:"any maskable"}
+    ]
+  };
+  const mURL = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'}));
+  const link=document.createElement('link'); link.rel='manifest'; link.href=mURL; document.head.appendChild(link);
+
+  // SW (network-first for HTML, cache-first for assets)
+  const swCode = `
+    const CACHE='realtime-merged-v1';
+    const ASSETS=['./'];
+    self.addEventListener('install',e=>{
+      e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))); self.skipWaiting();
+    });
+    self.addEventListener('activate',e=>{
+      e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))); self.clients.claim();
+    });
+    self.addEventListener('fetch',e=>{
+      const req=e.request;
+      if(req.mode==='navigate'){
+        e.respondWith(fetch(req).catch(()=>caches.match('./')));
+      }else{
+        e.respondWith(caches.match(req).then(res=>res||fetch(req).then(r=>{
+          const copy=r.clone(); caches.open(CACHE).then(c=>c.put(req, copy)); return r;
+        })));
+      }
+    });
+  `;
+  if ('serviceWorker' in navigator) {
+    const swURL = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
+    navigator.serviceWorker.register(swURL).catch(()=>{});
+  }
+
+  // install prompt
+  let deferredPrompt=null;
+  window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredPrompt=e; const b=document.getElementById('btnInstall'); if(b) b.style.display='inline-flex'; });
+  document.getElementById('btnInstall')?.addEventListener('click', async ()=>{
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt=null;
+  });
+})();
+
+/* ===================== State & Persistence ===================== */
+const $ = s=>document.querySelector(s);
+const $$ = s=>Array.from(document.querySelectorAll(s));
+const store = {
+  load() {
+    const raw = localStorage.getItem("realtime_state_merged");
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  },
+  save(obj) { localStorage.setItem("realtime_state_merged", JSON.stringify(obj)); }
+};
+const defaults = {
+  name:"You",
+  dailyLimit:120,
+  notif:true, geo:false, gdpr:false,
+  region:"CH-ZH",
+  perApp:[
+    { app:"Instagram", limit:60, used:20, category:"Social" },
+    { app:"TikTok", limit:30, used:12, category:"Social" },
+    { app:"YouTube", limit:45, used:20, category:"Video" },
+  ],
+  weekly:[
+    { day:"Mon", minutes:112 },
+    { day:"Tue", minutes:136 },
+    { day:"Wed", minutes:94 },
+    { day:"Thu", minutes:128 },
+    { day:"Fri", minutes:142 },
+    { day:"Sat", minutes:165 },
+    { day:"Sun", minutes:121 },
+  ],
+  categories:[
+    { name:"Short-Video", value:220, color:"#17a2ff" },
+    { name:"Messaging", value:160, color:"#6b7cff" },
+    { name:"News", value:90, color:"#34d399" },
+    { name:"Shopping", value:70, color:"#f59e0b" },
+  ],
+  interests:["Chess","Workout","Reading","Documentary","Coding","Language","Science","Creativity","Productivity","Life"],
+  communities:[
+    { id:"zh-01", name:"Zürich Kreis 1", members:432, avgDaily:104 },
+    { id:"zh-08", name:"Zürich Seefeld", members:611, avgDaily:98 },
+    { id:"lus-01", name:"Luzern Altstadt", members:287, avgDaily:116 },
+    { id:"bs-01", name:"Basel Kleinbasel", members:354, avgDaily:109 },
+  ],
+  joined:["zh-01"],
+  groups:[
+    { id:"fam", name:"Family", prize:"Winner picks Sunday brunch", members:[
+      { id:"u1", name:"You", monthlyMinutes:1780 },
+      { id:"u2", name:"Anna", monthlyMinutes:1230 },
+      { id:"u3", name:"Leo", monthlyMinutes:960 },
+    ]},
+    { id:"friends", name:"Friends — Zürich", prize:"Loser buys pizza night", members:[
+      { id:"u4", name:"Clara", monthlyMinutes:2200 },
+      { id:"u1", name:"You", monthlyMinutes:1780 },
+      { id:"u5", name:"Paul", monthlyMinutes:1490 },
+      { id:"u6", name:"Nico", monthlyMinutes:2750 },
+    ]},
+  ],
+  activeGroupId:"fam",
+  likes:[], skips:[], superlikes:[],
+  likeWeights:{},                 // category -> score
+  usage:{clicks:0, opens:0, tasksDone:0, focusSessions:0, share:0, notify:0, imports:0, exports:0}
+};
+let state = Object.assign({}, defaults, store.load() || {});
+(function(){ const g=new Date().getDay(); const idx = g===0?6:g-1; state.todayMinutes = state.weekly[idx].minutes })();
+function persist(){ store.save(state); $('#usageBadge').textContent = 'Usage: ' + (state.usage.clicks||0); }
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",1800); }
+function track(k){ state.usage[k]=(state.usage[k]||0)+1; state.usage.clicks++; persist(); renderInsights(); }
+
+/* ===================== Catalog (Alternatives) ===================== */
+const catalog = [
+  // Learning / CS
+  {id:"fcc",      title:"freeCodeCamp – Responsive Web Cert",        cat:"Coding",  minutes:20, href:"https://www.freecodecamp.org/learn", why:"Hands-on coding challenges."},
+  {id:"cs50",     title:"CS50 2024 – Computer Science (YouTube)",    cat:"Coding",  minutes:30, href:"https://www.youtube.com/c/cs50", why:"World-class intro to CS."},
+  {id:"odin",     title:"The Odin Project – Full-stack Path",        cat:"Coding",  minutes:20, href:"https://www.theodinproject.com/paths", why:"Project-based learning."},
+  {id:"codeorg",  title:"Code.org App Lab (free)",                   cat:"Coding",  minutes:15, href:"https://code.org/educate/applab", why:"Build small apps quickly."},
+  // Languages
+  {id:"duo",      title:"Duolingo – 15 min lesson",                  cat:"Language",minutes:15, href:"https://www.duolingo.com", why:"Micro-lessons for daily habit."},
+  {id:"memrise",  title:"Memrise – Words in context",                 cat:"Language",minutes:10, href:"https://www.memrise.com", why:"Short vocabulary sessions."},
+  {id:"bbc",      title:"BBC Learning English",                      cat:"Language",minutes:10, href:"https://www.bbc.co.uk/learningenglish", why:"Free videos & quizzes."},
+  // Reading / Knowledge
+  {id:"wiki",     title:"Wikipedia – Random Article",                cat:"Reading", minutes:8,  href:"https://en.wikipedia.org/wiki/Special:Random", why:"Serendipity knowledge."},
+  {id:"gutenberg",title:"Project Gutenberg – Free eBooks",           cat:"Reading", minutes:20, href:"https://www.gutenberg.org/", why:"Classic books for free."},
+  {id:"openstax", title:"OpenStax – Free Textbooks",                 cat:"Reading", minutes:20, href:"https://openstax.org/subjects", why:"University-level textbooks."},
+  {id:"openculture", title:"Open Culture – Free Courses",            cat:"Reading", minutes:15, href:"https://www.openculture.com/freeonlinecourses", why:"Curated learning links."},
+  // Science / Curiosity
+  {id:"nasa",     title:"NASA – Image of the Day",                   cat:"Science", minutes:5,  href:"https://www.nasa.gov/image-of-the-day/", why:"Daily space wonder."},
+  {id:"teded",    title:"TED-Ed – Animated Lessons",                 cat:"Science", minutes:10, href:"https://ed.ted.com/lessons?content_type=animations", why:"Short idea videos."},
+  {id:"natgeo",   title:"National Geographic – Explore",             cat:"Science", minutes:10, href:"https://www.nationalgeographic.com", why:"Nature & culture deep-dives."},
+  {id:"khan",     title:"Khan Academy – Math Practice",              cat:"Science", minutes:15, href:"https://www.khanacademy.org/math", why:"Adaptive skill practice."},
+  // Brain / Strategy
+  {id:"chess",    title:"Chess.com – 15-minute game",                cat:"Brain",   minutes:15, href:"https://www.chess.com/play/online", why:"Focus & planning."},
+  {id:"lichess",  title:"Lichess – Puzzles",                         cat:"Brain",   minutes:10, href:"https://lichess.org/training", why:"Tactics training."},
+  {id:"sudoku",   title:"Sudoku – WebSudoku",                        cat:"Brain",   minutes:10, href:"https://www.websudoku.com/", why:"Pattern & logic."},
+  // Health / Fitness
+  {id:"workout10",title:"10-min Workout (YT search)",                cat:"Fitness", minutes:10, href:"https://www.youtube.com/results?search_query=10+minute+workout", why:"Quick energy reset."},
+  {id:"yoga10",   title:"10-min Yoga Flow",                          cat:"Fitness", minutes:10, href:"https://www.youtube.com/results?search_query=10+minute+yoga", why:"Stretch & breathing."},
+  {id:"nhs",      title:"NHS – Couch to 5K plan",                    cat:"Fitness", minutes:15, href:"https://www.nhs.uk/live-well/exercise/couch-to-5k-week-by-week/", why:"Beginner-friendly running."},
+  // Career / Productivity
+  {id:"pmguide",  title:"Google – Project Management Basics",        cat:"Career",  minutes:20, href:"https://grow.google/certificates/project-management/", why:"Career skill pathways."},
+  {id:"notion",   title:"Notion Template – Daily Planner",           cat:"Productivity", minutes:10, href:"https://www.notion.so/templates/daily-planner", why:"Plan your day."},
+  {id:"ztm",      title:"Zero to Mastery Free Resources",            cat:"Career",  minutes:15, href:"https://zerotomastery.io/resources/", why:"Curated learning paths."},
+  // Creativity
+  {id:"canva",    title:"Canva – Design a Poster",                   cat:"Creativity",minutes:15, href:"https://www.canva.com/create/posters/", why:"Practice visual design."},
+  {id:"bandlab",  title:"BandLab – Make a Beat",                     cat:"Creativity",minutes:15, href:"https://www.bandlab.com/", why:"Music creation in browser."},
+  {id:"p5js",     title:"p5.js – Creative Coding",                   cat:"Creativity",minutes:15, href:"https://editor.p5js.org/", why:"Art with code."},
+  // Finance / Life
+  {id:"money",    title:"Practical Money Skills",                    cat:"Life",    minutes:10, href:"https://www.practicalmoneyskills.com/", why:"Personal finance basics."},
+  {id:"firstaid", title:"Red Cross – First Aid Basics",              cat:"Life",    minutes:10, href:"https://www.redcross.org/take-a-class/first-aid/performing-first-aid/first-aid-steps", why:"Learn life-saving steps."},
+  // Writing
+  {id:"gramm",    title:"Grammar – Purdue OWL",                      cat:"Writing", minutes:10, href:"https://owl.purdue.edu/owl/general_writing/index.html", why:"Stronger writing skills."},
+  {id:"typer",    title:"TypingClub – 10 min",                       cat:"Writing", minutes:10, href:"https://www.typingclub.com/", why:"Boost typing speed."},
+];
+
+/* ===================== Charts ===================== */
+function barChart(svg, data){
+  const w = svg.clientWidth, h = svg.clientHeight; svg.innerHTML='';
+  const pad=28, bw=(w-pad*2)/data.length*0.6;
+  const max = Math.max(...data.map(d=>d.minutes),1);
+  data.forEach((d,i)=>{
+    const x = pad + i*((w-pad*2)/data.length) + ((w-pad*2)/data.length-bw)/2;
+    const bh = (d.minutes/max)*(h-pad*2);
+    const y = h-pad - bh;
+    const bar = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    bar.setAttribute('x',x); bar.setAttribute('y',y);
+    bar.setAttribute('width',bw); bar.setAttribute('height',bh);
+    bar.setAttribute('fill','var(--blue)'); bar.setAttribute('opacity','0.9');
+    svg.appendChild(bar);
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', pad + i*((w-pad*2)/data.length) + ((w-pad*2)/data.length)/2);
+    label.setAttribute('y', h-8);
+    label.setAttribute('text-anchor','middle'); label.setAttribute('fill','#b7c7e6'); label.setAttribute('font-size','12');
+    label.textContent = d.day;
+    svg.appendChild(label);
+  });
+}
+function donutChart(svg, data){
+  const w = svg.clientWidth, h=svg.clientHeight; svg.innerHTML='';
+  const cx=w/2, cy=h/2, r=Math.min(w,h)/2-16, ir=r-24;
+  const sum = data.reduce((s,d)=>s+d.value,0) || 1;
+  let a0 = -Math.PI/2;
+  data.forEach(d=>{
+    const a1 = a0 + (d.value/sum)*(Math.PI*2);
+    const p = (a)=>[cx + r*Math.cos(a), cy + r*Math.sin(a)];
+    const q = (a)=>[cx + ir*Math.cos(a), cy + ir*Math.sin(a)];
+    const [x0,y0]=p(a0), [x1,y1]=p(a1);
+    const [ix1,iy1]=q(a1), [ix0,iy0]=q(a0);
+    const large = (a1-a0) > Math.PI ? 1 : 0;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const dstr = `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} L ${ix1} ${iy1} A ${ir} ${ir} 0 ${large} 0 ${ix0} ${iy0} Z`;
+    path.setAttribute('d', dstr);
+    path.setAttribute('fill', d.color || 'var(--blue)');
+    path.setAttribute('opacity','0.9');
+    svg.appendChild(path);
+    a0 = a1;
+  });
+  const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  txt.setAttribute('x',cx); txt.setAttribute('y',cy+4);
+  txt.setAttribute('text-anchor','middle'); txt.setAttribute('fill','#cfe2ff'); txt.setAttribute('font-size','14'); txt.setAttribute('font-weight','800');
+  txt.textContent = 'Categories';
+  svg.appendChild(txt);
+}
+
+/* ===================== Rendering helpers ===================== */
+function renderTabs(){
+  $$('.tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      $$('.tab').forEach(b=>b.classList.toggle('active', b===btn));
+      $$('.tabpane').forEach(sec=>sec.style.display = sec.id===btn.dataset.tab ? '' : 'none');
+      track(`tab_${btn.dataset.tab}`);
+    });
+  });
+  $('#openSwipeTab').onclick=()=>{$('[data-tab="swipe"]').click()};
+}
+
+function renderWeekly(){
+  const svg = $('#weeklyChart');
+  barChart(svg, state.weekly);
+  const total = state.weekly.reduce((s,d)=>s+d.minutes,0);
+  $('#weeklyTotal').textContent = `${total} min`;
+  $('#weeklyTotalHH').textContent = `≈ ${Math.floor(total/60)}h ${total%60}m`;
+}
+
+function renderDaily(){
+  const used = state.todayMinutes;
+  const remain = Math.max(0, state.dailyLimit - used);
+  const pct = Math.round((used/state.dailyLimit)*100);
+  $('#todayMin').textContent = used+' min';
+  $('#remainMin').textContent = remain+' min';
+  $('#dailyPct').textContent = Math.min(100, Math.max(0,pct));
+  $('#dailyProgress').style.width = Math.min(100, Math.max(0,pct))+'%';
+  $('#dailyLimit').value = state.dailyLimit;
+}
+
+function renderDonut(){ donutChart($('#donut'), state.categories); }
+
+function renderApps(){
+  const wrap = $('#appCards'); wrap.innerHTML='';
+  state.perApp.forEach((a,i)=>{
+    const pct = Math.min(100, Math.round((a.used/a.limit)*100));
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="body">
+        <div class="row"><div class="title" style="font-size:14px">${a.app}</div><span class="badge2">${pct}%</span></div>
+        <div class="row" style="gap:8px;margin:8px 0">
+          <input data-i="${i}" class="input" type="number" style="width:110px" value="${a.limit}"><span class="muted" style="font-size:12px">min/day</span>
+        </div>
+        <div class="progress"><i style="width:${pct}%"></i></div>
+        <div class="row" style="font-size:12px;color:var(--muted);margin-top:6px">
+          <span>Used: <b>${a.used}</b> min</span>
+          <div class="row" style="gap:6px;flex-wrap:wrap">
+            <button class="btn xs" data-bump="+5" data-i="${i}">+5 min</button>
+            <button class="btn xs" data-bump="-5" data-i="${i}">-5 min</button>
+            <button class="btn xs" data-open="${a.app}">Open tips</button>
+          </div>
+        </div>
+      </div>`;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.onchange=()=>{ const i=+inp.dataset.i; state.perApp[i].limit=Math.max(0, +inp.value||0); persist(); renderApps(); renderDaily(); track('edit_app_limit'); };
+  });
+  wrap.querySelectorAll('button[data-bump]').forEach(b=>{
+    b.onclick=()=>{
+      const i=+b.dataset.i, delta = +b.dataset.bump;
+      state.perApp[i].used = Math.max(0, state.perApp[i].used + delta);
+      if (state.perApp[i].app === "Instagram" && state.perApp[i].used >= 30) maybeShowNudge();
+      persist(); renderApps(); renderDaily(); track('simulate_usage');
+    }
+  });
+  wrap.querySelectorAll('button[data-open]').forEach(b=>{
+    b.onclick=()=>{ toast(`Tips for ${b.dataset.open} opened`); track('open_tips') }
+  });
+}
+
+function maybeShowNudge(){
+  if (state.nudgeShown) return;
+  const insta = state.perApp.find(a=>a.app==='Instagram');
+  if (!insta || insta.used < 30) return;
+  const n = $('#nudge'); n.style.display = 'block';
+  const list=$('#nudgeList'); list.innerHTML='';
+  pickSuggestions(4).forEach(s=> list.appendChild(suggestionCard(s, true)));
+  $('#dismissNudge').onclick=()=>{ state.nudgeShown=true; n.style.display='none'; persist(); track('dismiss_nudge'); };
+}
+
+function renderAlternativesGrid(){
+  const grid = $('#altGrid'); grid.innerHTML='';
+  const q = ($('#altSearch').value||'').trim().toLowerCase();
+  let items = [...catalog];
+  if (q) items = items.filter(x => x.title.toLowerCase().includes(q) || x.cat.toLowerCase().includes(q));
+  items.sort((a,b)=> (state.likeWeights[b.cat]||0) - (state.likeWeights[a.cat]||0));
+  items.slice(0, 18).forEach(s => grid.appendChild(suggestionCard(s)));
+}
+
+function suggestionCard(s, small=false){
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `
+    <div class="body">
+      <div class="title" style="font-size:14px">${s.title}</div>
+      <div class="desc">${s.cat} • ~${s.minutes} min • ${s.why}</div>
+      <div class="row" style="margin-top:8px;gap:6px;flex-wrap:wrap">
+        <a class="btn ${small?'sm':''} blue" href="${s.href}" target="_blank" rel="noreferrer" data-sid="${s.id}">Open</a>
+        <button class="btn ${small?'sm':''}" data-like="${s.id}">Like</button>
+        <button class="btn ${small?'sm':''}" data-task="${s.id}">Add to Tasks</button>
+        <button class="btn ${small?'sm':''} ghost" data-share="${s.id}">Share</button>
+      </div>
+    </div>`;
+  return div;
+}
+
+/* ===================== Swipe Deck ===================== */
+let deckQueue = [];
+function shuffle(a){ const arr=[...a]; for(let i=arr.length-1;i>0;i--){ const j=(Math.random()* (i+1))|0; [arr[i],arr[j]]=[arr[j],arr[i]] } return arr; }
+function pickSuggestions(n){
+  const scored = [...catalog].map(x=>({x, w: (state.likeWeights[x.cat]||0)+1}));
+  scored.sort((a,b)=>b.w-a.w);
+  return shuffle(scored.slice(0, Math.max(n*2, 8))).slice(0, n).map(s=>s.x);
+}
+function refillDeck(){
+  deckQueue = shuffle([...catalog]).slice(0, 12);
+  const deck = $('#deck'); deck.innerHTML='';
+  deckQueue.forEach((s, idx)=>{
+    const c = document.createElement('div');
+    c.className = 'card-swipe'; c.style.zIndex = 100-idx; c.dataset.sid = s.id;
+    c.innerHTML = `
+      <div class="content">
+        <div class="title" style="font-size:18px;margin-bottom:4px">${s.title}</div>
+        <div class="desc">${s.cat} • ~${s.minutes} min</div>
+        <p style="margin:12px 0">${s.why}</p>
+        <a class="btn blue" href="${s.href}" target="_blank" rel="noreferrer" data-sid="${s.id}">Open link</a>
+        <span class="badge2">Swipe → like • ← skip • ↑ superlike</span>
+      </div>
+      <div class="label-like" style="opacity:0">LIKE</div>
+      <div class="label-nope" style="opacity:0">SKIP</div>
+      <div class="label-super" style="opacity:0">SUPER</div>
+    `;
+    deck.appendChild(c);
+    enableSwipe(c, s);
+  });
+  updateSwipeCounters();
+}
+function enableSwipe(card, s){
+  let startX=0, startY=0, curX=0, curY=0, dragging=false;
+  const like = card.querySelector('.label-like'), nope = card.querySelector('.label-nope'), sup = card.querySelector('.label-super');
+  const onDown = e => { dragging=true; startX = e.clientX || e.touches?.[0].clientX; startY = e.clientY || e.touches?.[0].clientY; card.setPointerCapture?.(e.pointerId||0); };
+  const onMove = e => {
+    if(!dragging) return;
+    curX = (e.clientX || e.touches?.[0].clientX) - startX;
+    curY = (e.clientY || e.touches?.[0].clientY) - startY;
+    const rot = curX/20;
+    card.style.transform = `translate(${curX}px, ${curY}px) rotate(${rot}deg)`;
+    like.style.opacity = Math.max(0, Math.min(1,  curX/120));
+    nope.style.opacity = Math.max(0, Math.min(1, -curX/120));
+    sup.style.opacity  = Math.max(0, Math.min(1, -curY/120));
+  };
+  const complete = (type) => {
+    if (type==='like' || type==='super'){ learnPreference(s.cat, type==='super'?3:1); state.likes.push(s.id); }
+    if (type==='skip'){ state.skips.push(s.id); }
+    if (type==='super'){ state.superlikes.push(s.id); }
+    persist(); updateSwipeCounters(); renderAlternativesGrid(); track(`swipe_${type}`);
+    const dx = type==='like' ? 500 : type==='skip' ? -500 : 0;
+    const dy = type==='super' ? -500 : 0;
+    card.style.transition='transform .25s ease-out, opacity .25s';
+    card.style.transform=`translate(${dx}px, ${dy}px) rotate(${type==='skip'?-20:20}deg)`;
+    card.style.opacity='0';
+    setTimeout(()=> card.remove(), 260);
+  };
+  const onUp = () => {
+    dragging=false;
+    const absX = Math.abs(curX), absY = Math.abs(curY);
+    if (absX > 120) complete(curX>0?'like':'skip');
+    else if (curY < -120) complete('super');
+    else { card.style.transition='transform .2s'; card.style.transform=''; like.style.opacity=nope.style.opacity=sup.style.opacity=0; }
+  };
+  card.addEventListener('mousedown', onDown); card.addEventListener('mousemove', onMove); card.addEventListener('mouseup', onUp);
+  card.addEventListener('touchstart', onDown,{passive:true}); card.addEventListener('touchmove', onMove,{passive:true}); card.addEventListener('touchend', onUp);
+}
+function learnPreference(cat, delta){ state.likeWeights[cat]=(state.likeWeights[cat]||0)+delta; }
+function updateSwipeCounters(){ $('#likedCount').textContent = state.likes.length; $('#skippedCount').textContent = state.skips.length; }
+$('#btnNope').onclick = ()=> swipeTop('skip');
+$('#btnLike').onclick = ()=> swipeTop('like');
+$('#btnSuper').onclick= ()=> swipeTop('super');
+$('#refillDeck').onclick=()=>{ refillDeck(); toast('Deck refilled'); };
+function swipeTop(type){
+  const top = $('#deck .card-swipe'); if(!top) return;
+  const s = catalog.find(x=>x.id===top.dataset.sid);
+  if (type==='like' || type==='super'){ learnPreference(s.cat, type==='super'?3:1); state.likes.push(s.id); } else { state.skips.push(s.id); }
+  persist(); updateSwipeCounters(); renderAlternativesGrid(); track(`swipe_${type}`);
+  const dx = type==='like' ? 500 : type==='skip' ? -500 : 0; const dy = type==='super' ? -500 : 0;
+  top.style.transition='transform .25s ease-out, opacity .25s'; top.style.transform=`translate(${dx}px, ${dy}px) rotate(${type==='skip'?-20:20}deg)`; top.style.opacity='0';
+  setTimeout(()=> top.remove(), 260);
+}
+
+/* ===================== Focus Timer ===================== */
+const timer = { running:false, seconds:25*60, preset:25, id:null };
+function setPreset(min){ timer.preset=min; timer.seconds=min*60; updateTimer(); }
+function updateTimer(){ const s=timer.seconds; $('#timerMM').textContent=String(Math.floor(s/60)).padStart(2,'0'); $('#timerSS').textContent=String(s%60).padStart(2,'0'); }
+function startTimer(){
+  if(timer.running) return;
+  timer.running=true; $('#focusStart').disabled=true; $('#focusStop').disabled=false;
+  timer.id = setInterval(()=>{
+    if(timer.seconds>0){ timer.seconds--; updateTimer(); }
+    else { stopTimer(); toast('Focus complete!'); state.usage.focusSessions++; persist(); renderInsights(); renderStreak(); }
+  },1000);
+}
+function stopTimer(){ timer.running=false; $('#focusStart').disabled=false; $('#focusStop').disabled=true; if(timer.id){ clearInterval(timer.id); timer.id=null; } }
+function resetTimer(){ timer.seconds=timer.preset*60; updateTimer(); }
+function renderFocus(){
+  const presets=[15,25,45,60];
+  const wrap=$('#focusPresets'); wrap.innerHTML='';
+  presets.forEach(v=>{
+    const b=document.createElement('button');
+    b.className='btn sm '+(timer.preset===v?'blue':''); b.textContent=v+' min';
+    b.onclick=()=>{ setPreset(v); renderFocus(); track('set_preset'); };
+    wrap.appendChild(b);
+  });
+  updateTimer();
+  $('#focusStart').onclick=startTimer;
+  $('#focusStop').onclick=stopTimer;
+  $('#focusReset').onclick=()=>{ resetTimer(); track('reset_timer'); };
+
+  // Ambient brown noise (WebAudio)
+  const soundBtn = $('#focusSound'); const label = $('#soundState');
+  let ctx = null, noise = null, playing=false;
+  function startNoise(){
+    ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
+    const bufferSize = 2 * ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let lastOut = 0.0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      data[i] = (lastOut + (0.02 * white)) / 1.02;
+      lastOut = data[i];
+      data[i] *= 1.5;
+    }
+    noise = ctx.createBufferSource();
+    noise.buffer = buffer; noise.loop = true;
+    const gain = ctx.createGain(); gain.gain.value = 0.08;
+    noise.connect(gain).connect(ctx.destination);
+    noise.start(); playing=true; label.textContent='On';
+  }
+  function stopNoise(){ try{ noise?.stop(); }catch{} playing=false; label.textContent='Off'; }
+  soundBtn.onclick=()=>{ if (playing) stopNoise(); else startNoise(); track('toggle_sound'); };
+
+  renderStreak();
+
+  // ICS calendar
+  $('#addFocusToCalendar').onclick = ()=>{
+    const dt = new Date();
+    const dtEnd = new Date(dt.getTime() + timer.preset*60000);
+    function fmt(d){ return d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z'; }
+    const ics = [
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Realtime//Focus//EN',
+      'BEGIN:VEVENT',
+      'UID:focus-'+Date.now()+'@realtime',
+      'DTSTAMP:'+fmt(dt),
+      'DTSTART:'+fmt(dt),
+      'DTEND:'+fmt(dtEnd),
+      'SUMMARY:Realtime Focus Session ('+timer.preset+' min)',
+      'DESCRIPTION:Focus session created by Realtime prototype.',
+      'END:VEVENT','END:VCALENDAR'
+    ].join('\\r\\n');
+    const blob = new Blob([ics], {type:'text/calendar'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='focus.ics'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    track('export_ics');
+  };
+
+  // Share progress
+  $('#shareProgress').onclick = async ()=>{
+    const msg = `I just focused for ${timer.preset} minutes with Realtime.`;
+    try{
+      if (navigator.share) { await navigator.share({title:'Realtime Focus', text:msg}); }
+      else { await navigator.clipboard.writeText(msg); toast('Copied progress to clipboard'); }
+      state.usage.share++; persist();
+    }catch{}
+  };
+}
+
+function renderStreak(){
+  const s=$('#streakBadges'); s.innerHTML='';
+  const days = 7;
+  const doneCount = state.usage.focusSessions % (days+1);
+  for(let i=1;i<=days;i++){
+    const done = i <= doneCount;
+    const chip = document.createElement('span');
+    chip.className='badge2'; chip.textContent= done ? `Day ${i} ✓` : `Day ${i}`;
+    s.appendChild(chip);
+  }
+}
+
+/* ===================== Insights & Achievements ===================== */
+function renderInsights(){
+  const u = state.usage;
+  $('#usagePanel').innerHTML = `
+    <div class="row"><div>Opens</div><div class="badge2">${u.opens||0}</div></div>
+    <div class="row"><div>Clicks</div><div class="badge2">${u.clicks||0}</div></div>
+    <div class="row"><div>Focus sessions</div><div class="badge2">${u.focusSessions||0}</div></div>
+    <div class="row"><div>Shares</div><div class="badge2">${u.share||0}</div></div>
+    <div class="row"><div>Notifications</div><div class="badge2">${u.notify||0}</div></div>
+    <div class="row"><div>Imports / Exports</div><div class="badge2">${u.imports||0} / ${u.exports||0}</div></div>
+  `;
+  
+  $('#usagePanel').innerHTML += `<div class="row"><div>Activations (this month)</div><div class="badge2">${state.monthlyActivations||0}</div></div>`;
+const pref = Object.entries(state.likeWeights).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  $('#prefPanel').innerHTML = pref.length
+    ? pref.map(([k,v])=>`<span class="badge2">${k}: ${v}</span>`).join(' ')
+    : '<span class="desc">No preferences yet — like some alternatives.</span>';
+
+  // Simple achievements
+  const ach = $('#achievements');
+  ach.innerHTML='';
+  const items = [
+    {id:'firstLike', text:'First like on an alternative', ok: state.likes.length>0},
+    {id:'firstFocus', text:'Complete one focus session', ok: (state.usage.focusSessions||0) > 0},
+    {id:'under2h', text:'Keep a weekday under 120 minutes', ok: state.weekly.some(d=>d.minutes<120)},
+  ];
+  items.forEach(i=>{
+    const b = document.createElement('span'); b.className='badge2';
+    b.textContent = (i.ok?'🏅 ':'⬜ ')+i.text;
+    ach.appendChild(b);
+  });
+}
+
+/* ===================== Communities ===================== */
+function renderCommunities(){
+  const wrap = $('#communitiesList'); wrap.innerHTML='';
+  state.communities.forEach(c=>{
+    const joined = state.joined.includes(c.id);
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `
+      <div class="body">
+        <div class="row">
+          <div>
+            <div class="title" style="font-size:14px">${c.name}</div>
+            <div class="desc">${c.members} members • avg ${c.avgDaily} min/day</div>
+          </div>
+          <button class="btn sm ${joined?'ghost':'blue'}" data-join="${c.id}">${joined?'Joined':'Join'}</button>
+        </div>
+      </div>`;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('[data-join]').forEach(b=>{
+    b.onclick=()=>{
+      const id=b.dataset.join;
+      if(state.joined.includes(id)) state.joined = state.joined.filter(x=>x!==id);
+      else state.joined.push(id);
+      persist(); renderCommunities(); track('toggle_join');
+    };
+  });
+
+  // regions quick filter (static demo buttons)
+  const rb = $('#regionBtns'); rb.innerHTML='';
+  ['CH-ZH','CH-BS','CH-LU'].forEach(r=>{
+    const btn=document.createElement('button');
+    btn.className='btn sm '+(state.region===r?'blue':'');
+    btn.textContent=r; btn.onclick=()=>{ state.region=r; persist(); renderCommunities(); };
+    rb.appendChild(btn);
+  });
+
+  $('#btnUseLocation').onclick = ()=>{
+    if(!navigator.geolocation){ toast('Geolocation not supported'); return; }
+    navigator.geolocation.getCurrentPosition(()=>{
+      state.geo=true; persist(); toast('Location enabled (demo)');
+    },()=>toast('Location permission denied'));
+  };
+}
+
+/* ===================== Leaderboard ===================== */
+function renderLeaderboard(){
+  const grp = state.groups.find(g=>g.id===state.activeGroupId) || state.groups[0];
+  const gb = $('#groupButtons'); gb.innerHTML='';
+  state.groups.forEach(g=>{
+    const b=document.createElement('button');
+    b.className='btn sm ' + (g.id===grp.id?'blue':'');
+    b.textContent=g.name; b.onclick=()=>{ state.activeGroupId=g.id; persist(); renderLeaderboard(); };
+    gb.appendChild(b);
+  });
+  $('#groupPrize').textContent = grp.prize;
+  const body = $('#lbBody'); body.innerHTML='';
+  const arr = [...grp.members].sort((a,b)=>a.monthlyMinutes-b.monthlyMinutes);
+  arr.forEach((m,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${i+1}</td><td>${m.name}</td><td style="text-align:right">${m.monthlyMinutes}</td><td style="text-align:right">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'—'}</td>`;
+    body.appendChild(tr);
+  });
+    // Days left
+  const now=new Date(); const lastDay = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  $('#daysLeft').textContent = (lastDay - now.getDate());
+
+  // Actions
+  $('#createGroup').onclick = ()=>{
+    const name = prompt('Group name?','New Group');
+    if(!name) return;
+    const prize = prompt('Group prize?','Winner chooses activity');
+    const id = 'g'+Math.random().toString(36).slice(2,8);
+    state.groups.push({
+      id, name, prize: prize||'—', members:[
+        {id:'u1', name: state.name||'You', monthlyMinutes: 0},
+        {id:'uX', name:'Member A', monthlyMinutes: 0},
+        {id:'uY', name:'Member B', monthlyMinutes: 0},
+      ]
+    });
+    state.activeGroupId=id; persist(); renderLeaderboard(); track('create_group');
+  };
+  $('#lbExport').onclick = ()=>{
+    const grp = state.groups.find(g=>g.id===state.activeGroupId) || state.groups[0];
+    const rows = [['Rank','Name','Monthly minutes']];
+    const sorted = [...grp.members].sort((a,b)=>a.monthlyMinutes-b.monthlyMinutes);
+    sorted.forEach((m,i)=>rows.push([i+1,m.name,m.monthlyMinutes]));
+    const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`${grp.name.replace(/\s+/g,'_')}_leaderboard.csv`; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    state.usage.exports++; persist(); toast('CSV exported');
+  };
+  $('#lbShare').onclick = async ()=>{
+    const grp = state.groups.find(g=>g.id===state.activeGroupId) || state.groups[0];
+    const msg = `Join my Realtime group "${grp.name}". Prize: ${grp.prize}. Compete for least screen time this month!`;
+    try{
+      if(navigator.share){ await navigator.share({title:'Realtime Group', text:msg}); }
+      else { await navigator.clipboard.writeText(msg); toast('Invite copied'); }
+      state.usage.share++; persist();
+    }catch{}
+  };
+  $('#lbReset').onclick = ()=>{
+    const grp = state.groups.find(g=>g.id===state.activeGroupId) || state.groups[0];
+    grp.members.forEach(m=>m.monthlyMinutes=0);
+    persist(); renderLeaderboard(); track('lb_reset'); toast('Month reset (demo)');
+  };
+}
+
+/* ===================== Settings ===================== */
+function bindSwitch(el, key){
+  const apply=()=>{ el.classList.toggle('on', !!state[key]); };
+  el.onclick=()=>{ state[key]=!state[key]; apply(); persist(); track('toggle_'+key); };
+  apply();
+}
+function renderSettings(){
+  // fields
+  $('#set_name').value = state.name;
+  $('#set_limit').value = state.dailyLimit;
+  // switches
+  bindSwitch($('#set_notif'),'notif');
+  bindSwitch($('#set_geo'),'geo');
+  bindSwitch($('#set_gdpr'),'gdpr');
+
+  // per-app mini controls
+  const wrap=$('#settingsApps'); wrap.innerHTML='';
+  state.perApp.forEach((a,i)=>{
+    const d=document.createElement('div');
+    d.className='card';
+    d.innerHTML=`
+      <div class="body">
+        <div class="title" style="font-size:14px">${a.app}</div>
+        <div class="row" style="gap:8px;margin-top:8px">
+          <span class="muted" style="font-size:12px">Limit</span>
+          <input class="input" style="width:110px" type="number" value="${a.limit}" data-i="${i}">
+          <span class="muted" style="font-size:12px">Used</span>
+          <input class="input" style="width:110px" type="number" value="${a.used}" data-used="${i}">
+        </div>
+      </div>`;
+    wrap.appendChild(d);
+  });
+  wrap.querySelectorAll('input[data-i]').forEach(inp=>{
+    inp.onchange=()=>{ const i=+inp.dataset.i; state.perApp[i].limit=Math.max(0, +inp.value||0); persist(); renderApps(); renderDaily(); };
+  });
+  wrap.querySelectorAll('input[data-used]').forEach(inp=>{
+    inp.onchange=()=>{ const i=+inp.dataset.used; state.perApp[i].used=Math.max(0, +inp.value||0); persist(); renderApps(); renderDaily(); };
+  });
+
+  // save/share
+  $('#saveSettings').onclick=()=>{
+    state.name = $('#set_name').value.trim()||'You';
+    state.dailyLimit = Math.max(30, +$('#set_limit').value||120);
+    persist(); renderDaily(); toast('Settings saved');
+  };
+  $('#btnCopyShare').onclick=async ()=>{
+    const summary = `Realtime — ${state.name}
+Daily limit: ${state.dailyLimit} min
+Per-app: ${state.perApp.map(a=>`${a.app} ${a.used}/${a.limit}m`).join(', ')}
+Likes: ${state.likes.length}, Focus sessions: ${state.usage.focusSessions||0}`;
+    try{
+      await navigator.clipboard.writeText(summary); toast('Summary copied');
+    }catch{}
+  };
+}
+
+/* ===================== Import / Export / Reset / Misc ===================== */
+$('#btnExport').onclick=()=>{
+  const payload = { realtime: state, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='realtime-export.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  state.usage.exports++; persist(); toast('Exported JSON');
+};
+$('#btnImport').onclick=()=>{ $('#importer').style.display='flex'; };
+$('#closeImport').onclick=()=>{ $('#importer').style.display='none'; };
+$('#doImport').onclick=()=>{
+  try{
+    const obj = JSON.parse($('#importText').value||'{}');
+    if(obj && obj.realtime){ state = Object.assign({}, defaults, obj.realtime); persist(); initRenderAll(); toast('Imported'); state.usage.imports++; }
+    else throw new Error('Invalid format');
+  }catch(e){ toast('Import failed: '+e.message); }
+  $('#importer').style.display='none';
+};
+$('#btnReset').onclick=()=>{
+  if(!confirm('Reset all data to defaults?')) return;
+  state = JSON.parse(JSON.stringify(defaults));
+  persist(); initRenderAll(); toast('Reset complete');
+};
+
+$('#btnNotify').onclick=()=>{ state.notif=true; persist(); toast('We’ll notify you near your limit (demo)'); track('notify'); };
+$('#dailyLimit').onchange=()=>{ state.dailyLimit = Math.max(30, +$('#dailyLimit').value||120); persist(); renderDaily(); };
+$('#startFocusFromDL').onclick=()=>{ document.querySelector('[data-tab="focus"]').click(); startTimer(); };
+
+/* ===================== Alt Grid interactions ===================== */
+$('#altSearch').oninput=()=>{ renderAlternativesGrid(); };
+$('#shuffleAlts').onclick=()=>{ renderAlternativesGrid(); toast('Shuffled'); };
+
+document.addEventListener('click', (e)=>{
+  const t = e.target;
+  if(t.matches('[data-like]')){
+    const id=t.getAttribute('data-like'); const item = catalog.find(x=>x.id===id); if(!item) return;
+    learnPreference(item.cat, 1); state.likes.push(id); persist(); renderAlternativesGrid(); renderInsights(); toast('Liked');
+    track('like_alt');
+  }
+  if(t.matches('[data-task]')){
+    state.usage.tasksDone++; persist(); toast('Added to Tasks (demo)'); track('task_add');
+  }
+  if(t.matches('[data-share]')){
+    const id=t.getAttribute('data-share'); const item=catalog.find(x=>x.id===id);
+    const msg = `Check this out: ${item?.title} — ${item?.href||''}`;
+    (async ()=>{ try{ if(navigator.share){ await navigator.share({title:item?.title||'Realtime', text:msg}); } else { await navigator.clipboard.writeText(msg); toast('Link copied'); } state.usage.share++; persist(); }catch{}})();
+  }
+  if(t.matches('a[data-sid]')){ state.usage.opens++; persist(); }
+});
+
+/* ===================== Onboarding ===================== */
+function renderOnboarding(){
+  // interest chips
+  const wrap = $('#ob_interests'); wrap.innerHTML='';
+  defaults.interests.forEach(i=>{
+    const b=document.createElement('button'); b.className='btn sm ghost'; b.textContent=i;
+    b.onclick=()=>{ b.classList.toggle('blue'); };
+    wrap.appendChild(b);
+  });
+  // switches (simple)
+  const tog = (id)=>{ const el=$(id); el.onclick=()=>el.classList.toggle('on'); };
+  tog('#ob_geo'); tog('#ob_gdpr');
+
+  $('#ob_finish').onclick=()=>{
+    state.name = ($('#ob_name').value||'You').trim();
+    state.dailyLimit = Math.max(30, +$('#ob_limit').value||120);
+    state.geo = $('#ob_geo').classList.contains('on');
+    state.gdpr = $('#ob_gdpr').classList.contains('on');
+    state.onboarded = true;
+    persist(); $('#onboarding').style.display='none';
+    initRenderAll(); toast('Welcome!');
+  };
+}
+
+/* ===================== Init ===================== */
+function initRenderAll(){
+  renderWeekly();
+  renderDaily();
+  renderDonut();
+  renderApps();
+  renderAlternativesGrid();
+  renderCommunities();
+  renderLeaderboard();
+  renderFocus();
+  renderInsights();
+  renderSettings();
+  maybeShowNudge();
+}
+
+renderTabs();
+refillDeck();
+renderOnboarding();
+if(!state.onboarded){ $('#onboarding').style.display='flex'; }
+persist(); // update usage badge on first load
+initRenderAll();
+track('app_loaded');
+
+</script>
+</body>
+</html>
+
+
